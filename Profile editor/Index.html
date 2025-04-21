@@ -7,17 +7,15 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body onload="loadProfile()">
   <!-- Header -->
   <header>
     <nav class="navbar">
-      <div class="logo">
-        <img src="logo.png" alt="OnlyDaddy Logo" height="40" />
-      </div>
+      <div class="logo"><img src="logo.png" alt="OnlyDaddy Logo" height="40" /></div>
       <ul class="nav-links">
         <li><a href="/dashboard">Dashboard</a></li>
-        <li><a href="profile.html">Profile</a></li>
-        <li><a href="settings.html">Settings</a></li>
+        <li><a href="/profile">Profile</a></li>
+        <li><a href="/settings">Settings</a></li>
         <li><a href="/news-feed">News Feed</a></li>
         <li><a href="/login" onclick="logout()">Logout</a></li>
       </ul>
@@ -27,7 +25,7 @@
   <div class="auth-container">
     <h2>Edit Your Profile</h2>
     <form id="profile-form">
-      <input type="file" id="profile-pic" placeholder="Profile Picture" accept="image/*" />
+      <input type="file" id="profile-pic" accept="image/*" />
       <textarea id="bio" placeholder="Your Bio"></textarea>
       <input type="text" id="location" placeholder="Location" />
       <button type="submit">Save Profile</button>
@@ -35,7 +33,6 @@
     <button onclick="logout()">Logout</button>
   </div>
 
-  <!-- Footer -->
   <footer>
     <div class="footer-content">
       <p>© 2025 OnlyDaddy. All rights reserved.</p>
@@ -44,88 +41,104 @@
   </footer>
 
   <script>
-    const client = supabase.createClient('https://kbljqabewgtmgekewtkn.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtibGpxYWJld2d0bWdla2V3dGtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMTk0NjksImV4cCI6MjA2MDc5NTQ2OX0.v4s9jt3JmajckFNI0WaexeeE7OP_bKMGhdvvycov0VM');
+    // Initialize Supabase client once
+    const client = supabase.createClient(
+      'https://kbljqabewgtmgekewtkn.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtibGpxYWJld2d0bWdla2V3dGtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMTk0NjksImV4cCI6MjA2MDc5NTQ2OX0.v4s9jt3JmajckFNI0WaexeeE7OP_bKMGhdvvycov0VM'
+    );
 
-document.getElementById('profile-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
+    // Submit handler
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-  
-  const { data: { user }, error } = await client.auth.getUser();
-
-  if (error || !user) {
-    window.location.href = '/login';
-    return;
-  }
-});
-    
-    const { data: { user } } = await client.auth.getUser();
-    const fileInput = document.getElementById('profile-pic');
-    const bio = document.getElementById('bio').value;
-    const location = document.getElementById('location').value;
-    let profilePicUrl = '';
-
-    if (fileInput.files.length > 0) {
-      const file = fileInput.files[0];
-      const { error: uploadError } = await client.storage
-        .from('profile-pictures')
-        .upload(`avatars/${user.id}`, file, { upsert: true });
-
-      if (uploadError) {
-        console.error(uploadError);
+      // 1) fetch and guard user
+      const { data: { user }, error: userError } = await client.auth.getUser();
+      if (userError || !user) {
+        window.location.href = '/login';
         return;
       }
 
-      const { data: publicUrlData } = client.storage
-        .from('profile-pictures')
-        .getPublicUrl(`avatars/${user.id}`);
-      profilePicUrl = publicUrlData.publicUrl;
-    }
+      // 2) gather inputs
+      const fileInput = document.getElementById('profile-pic');
+      const bio = document.getElementById('bio').value;
+      const location = document.getElementById('location').value;
+      let profilePicUrl = '';
 
-    const { error } = await client
-      .from('profiles')
-      .upsert({ 
-        user_id: user.id,
-        bio,
-        location,
-        profile_pic_url: profilePicUrl 
-      });
+      // 3) optional upload
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const { error: uploadError } = await client.storage
+          .from('profile-pictures')
+          .upload(`avatars/${user.id}`, file, { upsert: true });
 
-    if (error) {
-      console.error(error);
-    } else {
-      alert('Profile updated successfully');
-    }
-  });
+        if (uploadError) {
+          console.error(uploadError);
+          alert('Image upload failed');
+          return;
+        }
 
+        const { data: { publicUrl } } = client.storage
+          .from('profile-pictures')
+          .getPublicUrl(`avatars/${user.id}`);
+        profilePicUrl = publicUrl;
+      }
 
+      // 4) upsert profile row
+      const { error: upsertError } = await client
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          bio,
+          location,
+          profile_pic_url: profilePicUrl
+        });
 
+      if (upsertError) {
+        console.error(upsertError);
+        alert('Profile save failed');
+      } else {
+        alert('Profile updated successfully');
+      }
+    });
+
+    // Load existing profile
     async function loadProfile() {
+      // 1) fetch and guard user
+      const { data: { user }, error: userError } = await client.auth.getUser();
+      if (userError || !user) {
+        window.location.href = '/login';
+        return;
+      }
 
-  const { data: { user }, error } = await client.auth.getUser();
+      // 2) fetch profile row
+      const { data, error: fetchError } = await client
+        .from('profiles')
+        .select('bio, location, profile_pic_url')
+        .eq('user_id', user.id)
+        .single();
 
-  if (error || !user) {
-    window.location.href = '/login';
-    return;
-  }
-}
-    const { data, error } = await client
-      .from('profiles')
-      .select('bio, location, profile_pic_url')
-      .eq('user_id', user.id)
-      .single();
+      if (fetchError) {
+        console.error(fetchError);
+        return;
+      }
 
-    if (data) {
+      // 3) pre-fill fields
       document.getElementById('bio').value = data.bio || '';
       document.getElementById('location').value = data.location || '';
+      if (data.profile_pic_url) {
+        const img = document.createElement('img');
+        img.src = data.profile_pic_url;
+        img.alt = 'Profile Picture';
+        img.style.maxWidth = '150px';
+        document.querySelector('.auth-container').insertBefore(img, document.getElementById('profile-form'));
+      }
     }
-  }
 
-  async function logout() {
-    await client.auth.signOut();
-    window.location.href = '/login';
-  }
-
-  loadProfile();
-</script>
+    // Logout helper
+    async function logout() {
+      await client.auth.signOut();
+      window.location.href = '/login';
+    }
+  </script>
 </body>
 </html>
