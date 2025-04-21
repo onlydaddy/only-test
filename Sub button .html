@@ -1,0 +1,18 @@
+<button onclick="subscribeToCreator(creatorId)">Subscribe to Creator</button>
+
+<script>
+  async function subscribeToCreator(creatorId) {
+    const user = supabase.auth.user();
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .upsert([
+        { user_id: user.id, creator_id: creatorId }
+      ]);
+
+    if (error) {
+      console.error(error);
+    } else {
+      alert('Successfully subscribed to the creator!');
+    }
+  }
+</script>

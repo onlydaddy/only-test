@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>News Feed | OnlyDaddy</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo"><img src="logo.png" alt="Logo" height="40" /></div>
+    <ul class="nav-links">
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="profile.html">Profile</a></li>
+      <li><a href="settings.html">Settings</a></li>
+      <li><a href="#" onclick="logout()">Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="news-feed-container">
+    <h2>Your News Feed</h2>
+    <div id="news-feed"></div>
+  </div>
+
+  <script>
+    const supabase = supabase.createClient('https://kbljqabewgtmgekewtkn.supabase.co', 'your_anon_key');
+
+    async function loadNewsFeed() {
+      const user = supabase.auth.user();
+      const { data: posts, error } = await supabase
+        .from('posts')
+        .select('*, creator:user_id(*)')
+        .eq('user_id', user.id); // Fetch posts from creators the user subscribes to
+
+      if (error) {
+        console.error(error);
+      } else {
+        const feedElement = document.getElementById('news-feed');
+        posts.forEach(post => {
+          const postElement = document.createElement('div');
+          postElement.classList.add('post');
+          postElement.innerHTML = `
+            <h3>${post.creator.username}</h3>
+            <p>${post.content}</p>
+            <span>${post.created_at}</span>
+          `;
+          feedElement.appendChild(postElement);
+        });
+      }
+    }
+
+    loadNewsFeed();
+
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

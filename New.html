@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Profile | OnlyDaddy</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <nav class="navbar">
+      <div class="logo">
+        <img src="logo.png" alt="OnlyDaddy Logo" height="40" />
+      </div>
+      <ul class="nav-links">
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="profile.html">Profile</a></li>
+        <li><a href="settings.html">Settings</a></li>
+        <li><a href="news-feed.html">News Feed</a></li>
+        <li><a href="login.html" onclick="logout()">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="auth-container">
+    <h2>Edit Your Profile</h2>
+    <form id="profile-form">
+      <input type="file" id="profile-pic" placeholder="Profile Picture" accept="image/*" />
+      <textarea id="bio" placeholder="Your Bio"></textarea>
+      <input type="text" id="location" placeholder="Location" />
+      <button type="submit">Save Profile</button>
+    </form>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <p>© 2025 OnlyDaddy. All rights reserved.</p>
+      <p>Contact: <a href="mailto:support@onlydaddy1.shop">support@onlydaddy1.shop</a></p>
+    </div>
+  </footer>
+
+  <script>
+    const supabase = supabase.createClient('https://kbljqabewgtmgekewtkn.supabase.co', 'your_anon_key');
+
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('profile-pic');
+      const bio = document.getElementById('bio').value;
+      const location = document.getElementById('location').value;
+
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const { data, error: uploadError } = await supabase.storage
+          .from('profile-pictures')
+          .upload(`public/${file.name}`, file);
+
+        if (uploadError) {
+          console.error(uploadError);
+        } else {
+          const profilePicUrl = data?.Key;
+          await updateProfile(bio, location, profilePicUrl);
+        }
+      } else {
+        await updateProfile(bio, location, null);
+      }
+    });
+
+    async function updateProfile(bio, location, profilePicUrl) {
+      const user = supabase.auth.user();
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({ 
+          user_id: user.id,
+          bio: bio,
+          location: location,
+          profile_pic_url: profilePicUrl || ''
+        });
+
+      if (error) {
+        console.error(error);
+      } else {
+        alert('Profile updated successfully');
+      }
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>
