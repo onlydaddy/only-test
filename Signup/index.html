@@ -13,11 +13,11 @@
     <div class="container">
         <div class="form-container">
             <h2>Create Account</h2>
-            <form id="signup-form">
-                <input type="email" id="email" placeholder="Email" required />
-                <input type="password" id="password" placeholder="Password" required />
-                <button type="submit">Sign Up</button>
-            </form>
+            <<form id="signup-form">
+                <input type="email" id="signup-email" placeholder="Email" required />
+                <input type="password" id="signup-password" placeholder="Password" required />
+               <button type="submit">Sign Up</button>
+           </form>
         </div>
     </div>
 
@@ -27,18 +27,19 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtibGpxYWJld2d0bWdla2V3dGtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMTk0NjksImV4cCI6MjA2MDc5NTQ2OX0.v4s9jt3JmajckFNI0WaexeeE7OP_bKMGhdvvycov0VM';
         const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        document.getElementById('signup-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+  document.getElementById('signup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
 
-            const { user, error } = await supabase.auth.signUp({ email, password });
-            if (error) {
-                alert(error.message);
-            } else {
-                alert('Check your email for the verification link!');
-            }
-        });
-    </script>
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      alert(error.message);
+    } else {
+      alert('Signup successful! Check your email for the verification link.');
+      window.location.href = '/login';
+    }
+  });
+        </script>
 </body>
 </html>
