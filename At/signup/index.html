@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up | OnlyDaddy</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link rel="stylesheet" href="/global.css" />
+</head>
+<body>
+  <div class="form-container">
+    <h2>Create Account</h2>
+    <form id="signup-form">
+      <input type="email" id="signup-email" placeholder="Email" required />
+      <input type="password" id="signup-password" placeholder="Password" required />
+      <input type="text" id="signup-username" placeholder="Username" required />
+      <input type="file" id="signup-profile-pic" accept="image/*" />
+      <button type="submit">Sign Up</button>
+    </form>
+    <p>Already have an account? <a href="/login">Log in</a></p>
+  </div>
+
+  <script>
+    // 1) Init Supabase
+    const supabase = supabase.createClient(
+      'https://kbljqabewgtmgekewtkn.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…'
+    );
+
+    // 2) Handle form submit
+    document.getElementById('signup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email    = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+      const username = document.getElementById('signup-username').value;
+      const fileIn   = document.getElementById('signup-profile-pic');
+      let   picUrl   = '';
+
+      // 3) Create user
+      const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+      if (signUpError) {
+        alert('Signup error: ' + signUpError.message);
+        return;
+      }
+      const user = data.user;
+
+      // 4) Optional: upload profile pic
+      if (fileIn.files.length > 0) {
+        const file = fileIn.files[0];
+        const { error: upErr } = await supabase
+          .storage
+          .from('profile-pictures')
+          .upload(`avatars/${user.id}`, file, { upsert: true });
+
+        if (upErr) {
+          console.error(upErr);
+          alert('Profile picture upload failed');
+        } else {
+          const { data: { publicUrl } } = supabase
+            .storage
+            .from('profile-pictures')
+            .getPublicUrl(`avatars/${user.id}`);
+          picUrl = publicUrl;
+        }
+      }
+
+      // 5) Upsert profile row
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id:         user.id,
+          username:        username,
+          profile_pic_url: picUrl
+        });
+
+      if (profileErr) {
+        console.error(profileErr);
+        alert('Saving profile info failed');
+        return;
+      }
+
+      // 6) Success! Go to dashboard
+      alert('Account created! Redirecting to your dashboard…');
+      window.location.href = '/dashboard';
+    });
+  </script>
+</body>
+</html>
