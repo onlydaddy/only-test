@@ -15,11 +15,11 @@
         <img src="logo.png" alt="OnlyDaddy Logo" height="40" />
       </div>
       <ul class="nav-links">
-        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="/dashboard">Dashboard</a></li>
         <li><a href="profile.html">Profile</a></li>
         <li><a href="settings.html">Settings</a></li>
-        <li><a href="news-feed.html">News Feed</a></li>
-        <li><a href="login.html" onclick="logout()">Logout</a></li>
+        <li><a href="/news-feed">News Feed</a></li>
+        <li><a href="/login" onclick="logout()">Logout</a></li>
       </ul>
     </nav>
   </header>
@@ -70,7 +70,7 @@
     });
 
     async function updateProfile(bio, location, profilePicUrl) {
-      const user = supabase.auth.user();
+      const { data: { user }, error } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from('profiles')
         .upsert({ 
@@ -89,7 +89,7 @@
 
     async function logout() {
       await supabase.auth.signOut();
-      window.location.href = 'login.html';
+      window.location.href = '/login';
     }
   </script>
 </body>
