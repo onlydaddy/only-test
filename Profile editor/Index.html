@@ -44,53 +44,73 @@
   </footer>
 
   <script>
-    const supabase = supabase.createClient('https://kbljqabewgtmgekewtkn.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtibGpxYWJld2d0bWdla2V3dGtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMTk0NjksImV4cCI6MjA2MDc5NTQ2OX0.v4s9jt3JmajckFNI0WaexeeE7OP_bKMGhdvvycov0VM');
+    const client = supabase.createClient('https://kbljqabewgtmgekewtkn.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtibGpxYWJld2d0bWdla2V3dGtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyMTk0NjksImV4cCI6MjA2MDc5NTQ2OX0.v4s9jt3JmajckFNI0WaexeeE7OP_bKMGhdvvycov0VM');
 
-    document.getElementById('profile-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fileInput = document.getElementById('profile-pic');
-      const bio = document.getElementById('bio').value;
-      const location = document.getElementById('location').value;
+   document.getElementById('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-      if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const { data, error: uploadError } = await supabase.storage
-          .from('profile-pictures')
-          .upload(`public/${file.name}`, file);
+    const { data: { user } } = await client.auth.getUser();
+    const fileInput = document.getElementById('profile-pic');
+    const bio = document.getElementById('bio').value;
+    const location = document.getElementById('location').value;
+    let profilePicUrl = '';
 
-        if (uploadError) {
-          console.error(uploadError);
-        } else {
-          const profilePicUrl = data?.Key;
-          await updateProfile(bio, location, profilePicUrl);
-        }
-      } else {
-        await updateProfile(bio, location, null);
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const { error: uploadError } = await client.storage
+        .from('profile-pictures')
+        .upload(`avatars/${user.id}`, file, { upsert: true });
+
+      if (uploadError) {
+        console.error(uploadError);
+        return;
       }
-    });
 
-    async function updateProfile(bio, location, profilePicUrl) {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      const { data, error } = await supabase
-        .from('profiles')
-        .upsert({ 
-          user_id: user.id,
-          bio: bio,
-          location: location,
-          profile_pic_url: profilePicUrl || ''
-        });
-
-      if (error) {
-        console.error(error);
-      } else {
-        alert('Profile updated successfully');
-      }
+      const { data: publicUrlData } = client.storage
+        .from('profile-pictures')
+        .getPublicUrl(`avatars/${user.id}`);
+      profilePicUrl = publicUrlData.publicUrl;
     }
 
-    async function logout() {
-      await supabase.auth.signOut();
-      window.location.href = '/login';
+    const { error } = await client
+      .from('profiles')
+      .upsert({ 
+        user_id: user.id,
+        bio,
+        location,
+        profile_pic_url: profilePicUrl 
+      });
+
+    if (error) {
+      console.error(error);
+    } else {
+      alert('Profile updated successfully');
     }
-  </script>
+  });
+
+  async function loadProfile() {
+    const { data: { user } } = await client.auth.getUser()if (!user) {
+  window.location.href = '/login';
+  return;
+};
+    const { data, error } = await client
+      .from('profiles')
+      .select('bio, location, profile_pic_url')
+      .eq('user_id', user.id)
+      .single();
+
+    if (data) {
+      document.getElementById('bio').value = data.bio || '';
+      document.getElementById('location').value = data.location || '';
+    }
+  }
+
+  async function logout() {
+    await client.auth.signOut();
+    window.location.href = '/login';
+  }
+
+  loadProfile();
+</script>
 </body>
 </html>
