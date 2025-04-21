@@ -1,16 +1,28 @@
 <button onclick="subscribeToCreator(creatorId)">Subscribe to Creator</button>
 
 <script>
+  // 1) Use your Supabase client instance
+  const client = supabase.createClient(supabaseUrl, supabaseKey);
+
   async function subscribeToCreator(creatorId) {
-    const user = supabase.auth.user();
-    const { data, error } = await supabase
+    // 2) Get & guard the user
+    const { data: { user }, error: userError } = await client.auth.getUser();
+    if (userError || !user) {
+      // not logged in → redirect
+      return window.location.href = '/login';
+    }
+
+    // 3) Insert or upsert the subscription
+    const { data, error } = await client
       .from('subscriptions')
-      .upsert([
-        { user_id: user.id, creator_id: creatorId }
-      ]);
+      .insert(
+        [{ user_id: user.id, creator_id: creatorId }],
+        { upsert: true, onConflict: ['user_id', 'creator_id'] }
+      );
 
     if (error) {
-      console.error(error);
+      console.error('Subscription failed:', error);
+      alert('Could not subscribe. Try again later.');
     } else {
       alert('Successfully subscribed to the creator!');
     }
