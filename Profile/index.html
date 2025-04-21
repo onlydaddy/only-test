@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Profile | OnlyDaddy</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link rel="stylesheet" href="/global.css" />
+  <style>
+    /* brief overrides for demo */
+    #message { margin: 1rem 0; font-weight: bold; }
+    #preview { display: block; max-width:150px; margin:0.5rem 0; }
+    .toggle { display:flex; align-items:center; gap:.5rem; margin:1rem 0; }
+  </style>
+</head>
+<body onload="loadProfile()">
+  <div class="form-container">
+    <h2>Edit Your Profile</h2>
+    <div id="message"></div>
+
+    <form id="profile-form">
+      <!-- Username -->
+      <input type="text" id="username" placeholder="Username" />
+
+      <!-- Email (editable) -->
+      <input type="email" id="email" placeholder="Email" />
+
+      <!-- Profile picture picker + preview -->
+      <input type="file" id="profile-pic" accept="image/*" />
+      <img id="preview" src="" alt="Preview" style="display:none" />
+
+      <!-- Bio -->
+      <textarea id="bio" placeholder="Your Bio"></textarea>
+
+      <!-- Location -->
+      <input type="text" id="location" placeholder="Location" />
+
+      <!-- Visibility toggle -->
+      <label class="toggle">
+        <input type="checkbox" id="is-public" />
+        <span>Make my profile public</span>
+      </label>
+    </form>
+  </div>
+
+  <script>
+    const client = supabase.createClient(
+      'https://kbljqabewgtmgekewtkn.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…'
+    );
+
+    // Debounce helper
+    function debounce(fn, ms) {
+      let t;
+      return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
+
+    // Display message
+    function showMessage(text, isError = false) {
+      const msg = document.getElementById('message');
+      msg.textContent = text;
+      msg.style.color = isError ? 'crimson' : 'green';
+      setTimeout(() => { msg.textContent = ''; }, 3000);
+    }
+
+    // Auto-save handler
+    const autoSave = debounce(async () => {
+      // fetch & guard user
+      const { data:{user}, error:uErr } = await client.auth.getUser();
+      if (uErr || !user) return window.location.href = '/login';
+
+      const payload = {
+        user_id: user.id,
+        username: document.getElementById('username').value,
+        bio: document.getElementById('bio').value,
+        location: document.getElementById('location').value,
+        is_public: document.getElementById('is-public').checked,
+      };
+
+      // update email separately
+      const newEmail = document.getElementById('email').value;
+      if (newEmail && newEmail !== user.email) {
+        const { error: eErr } = await client.auth.updateUser({ email: newEmail });
+        if (eErr) return showMessage('Email update failed', true);
+      }
+
+      // handle profile-pic upload if changed
+      const fileInput = document.getElementById('profile-pic');
+      if (fileInput.files.length) {
+        const file = fileInput.files[0];
+        const { error: upErr } = await client.storage
+          .from('profile-pictures')
+          .upload(`avatars/${user.id}`, file, { upsert: true });
+        if (upErr) return showMessage('Image upload failed', true);
+
+        const { data:{publicUrl} } = client.storage
+          .from('profile-pictures')
+          .getPublicUrl(`avatars/${user.id}`);
+        payload.profile_pic_url = publicUrl;
+      }
+
+      // upsert profile row
+      const { error: pErr } = await client
+        .from('profiles')
+        .upsert(payload);
+      if (pErr) return showMessage('Save failed', true);
+
+      showMessage('All changes saved');
+    }, 1000);
+
+    // Preview image
+    document.getElementById('profile-pic')
+      .addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        const img = document.getElementById('preview');
+        img.src = url; img.style.display = 'block';
+        autoSave();
+      });
+
+    // Wire auto-save on other fields
+    ['username','email','bio','location','is-public']
+      .forEach(id => document.getElementById(id)
+        .addEventListener('input', autoSave)
+      );
+
+    // Load existing profile
+    async function loadProfile() {
+      const { data:{user}, error:uErr } = await client.auth.getUser();
+      if (uErr || !user) return window.location.href = '/login';
+
+      // fill email
+      document.getElementById('email').value = user.email;
+
+      // fetch profile row
+      const { data, error } = await client
+        .from('profiles')
+        .select('username,bio,location,profile_pic_url,is_public')
+        .eq('user_id', user.id)
+        .single();
+      if (error) return console.error(error);
+
+      document.getElementById('username').value     = data.username || '';
+      document.getElementById('bio').value          = data.bio || '';
+      document.getElementById('location').value     = data.location || '';
+      document.getElementById('is-public').checked  = data.is_public;
+
+      if (data.profile_pic_url) {
+        const img = document.getElementById('preview');
+        img.src = data.profile_pic_url;
+        img.style.display = 'block';
+      }
+    }
+
+    // Logout helper
+    async function logout() {
+      await client.auth.signOut();
+      window.location.href = '/login';
+    }
+  </script>
+</body>
+</html>
