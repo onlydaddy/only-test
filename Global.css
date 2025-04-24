@@ -1,55 +1,128 @@
-/* Global CSS for the app */
+/* === Light Theme (Default) === */
+:root {
+  --primary-color: #2176ff;
+  --accent-color: #14c6ff;
+  --bg-light: #f5faff;
+  --bg-dark: #0e0e1a;
+  --text-color: #1a1a1a;
+  --text-light: #ffffff;
+  --border-radius: 12px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --font-main: 'Inter', sans-serif;
+}
+
+/* === Dark Mode Overrides === */
+[data-theme='dark'] {
+  --primary-color: #3e9eff;
+  --accent-color: #00e1ff;
+  --bg-light: #0a0c10;
+  --bg-dark: #000000;
+  --text-color: #f2f2f2;
+  --text-light: #ffffff;
+  --shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
+}
+
+/* === Base Reset === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f7fc;
-    color: #333;
-    margin: 0;
-    padding: 0;
+  font-family: var(--font-main);
+  background-color: var(--bg-light);
+  color: var(--text-color);
+  line-height: 1.6;
+  padding: 2rem;
+  transition: all 0.3s ease;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+/* === Headings === */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--primary-color);
 }
 
-header {
-    background-color: #222;
-    color: white;
-    padding: 10px 20px;
-    text-align: center;
+/* === Buttons === */
+button,
+.btn {
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+  color: var(--text-light);
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: 0.3s ease;
 }
 
-h1, h2 {
-    font-size: 2rem;
+button:hover,
+.btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
 }
 
-button {
-    padding: 10px 20px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+/* === Cards === */
+.card {
+  background: var(--bg-dark);
+  color: var(--text-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  transition: transform 0.2s ease;
 }
 
-button:hover {
-    background-color: #45a049;
+.card:hover {
+  transform: scale(1.02);
 }
 
-input {
-    padding: 10px;
-    margin-bottom: 10px;
-    width: 100%;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+/* === Nav Bar === */
+.navbar {
+  background-color: var(--primary-color);
+  color: var(--text-light);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: var(--border-radius);
 }
 
-.form-container {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.navbar a {
+  color: var(--text-light);
+  text-decoration: none;
+  margin-left: 1rem;
+  transition: opacity 0.2s ease;
+}
+
+.navbar a:hover {
+  opacity: 0.8;
+}
+
+/* === Inputs === */
+input,
+textarea {
+  width: 100%;
+  padding: 0.75rem;
+  margin: 0.5rem 0 1rem 0;
+  border-radius: var(--border-radius);
+  border: 1px solid #555;
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--primary-color);
+}
+
+/* === Footer === */
+.footer {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+  font-size: 0.875rem;
 }
