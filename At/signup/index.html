@@ -7,7 +7,27 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <link rel="stylesheet" href="/global.css" />
 </head>
-<body>
+<body> id="siteBody" data-theme="light">
+  <div class="form-container">
+    <h2>Create Account</h2>
+    <form id="signup-form">
+      <input type="email" id="signup-email" placeholder="Email" required />
+      <input type="password" id="signup-password" placeholder="Password" required />
+      <input type="text" id="signup-username" placeholder="Username" required />
+      <input type="file" id="signup-profile-pic" accept="image/*" />
+      <button type="submit">Sign Up</button>
+    </form>
+    <p>Already have an account? <a href="/login">Log in</a></p>
+  </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2025 OnlyDaddy. All rights reserved.</p>
+  </footer>
+
+</body>
+</html>
+
   <div class="form-container">
     <h2>Create Account</h2>
     <form id="signup-form">
