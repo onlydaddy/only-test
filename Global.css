@@ -1,4 +1,4 @@
-/* === Light Theme (Default) === */
+@media (prefers-color-scheme: dark) {
 :root {
   --primary-color: #2176ff;
   --accent-color: #14c6ff;
